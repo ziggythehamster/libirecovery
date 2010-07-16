@@ -137,26 +137,21 @@ int received_cb(irecv_client_t client, const irecv_event_t* event) {
 }
 
 int precommand_cb(irecv_client_t client, const irecv_event_t* event) {
-	if (event->type == IRECV_PRECOMMAND) {
-		irecv_error_t error = 0;
-		if (event->data[0] == '/') {
-			parse_command(client, event->data, event->size);
-			return -1;
-		}
-	}
-	return 0;
-}
-
-int postcommand_cb(irecv_client_t client, const irecv_event_t* event) {
 	char* value = NULL;
 	char* action = NULL;
 	char* command = NULL;
 	char* argument = NULL;
 	irecv_error_t error = IRECV_E_SUCCESS;
 
-	if (event->type == IRECV_POSTCOMMAND) {
+	if (event->type == IRECV_PRECOMMAND) {
+		if (event->data[0] == '/') {
+			parse_command(client, event->data, event->size);
+			return -1;
+		}
+
 		command = strdup(event->data);
 		action = strtok(command, " ");
+
 		if (!strcmp(action, "getenv")) {
 			argument = strtok(NULL, " ");
 			error = irecv_getenv(client, argument, &value);
@@ -165,9 +160,23 @@ int postcommand_cb(irecv_client_t client, const irecv_event_t* event) {
 				free(command);
 				return error;
 			}
-			printf("%s\n", value);
-			free(value);
+			if (value) {
+				printf("%s\n", value);
+				free(value);
+			}
+			return 1;
 		}
+	}
+	return 0;
+}
+
+int postcommand_cb(irecv_client_t client, const irecv_event_t* event) {
+	char* action = NULL;
+	char* command = NULL;
+
+	if (event->type == IRECV_POSTCOMMAND) {
+		command = strdup(event->data);
+		action = strtok(command, " ");
 
 		if (!strcmp(action, "reboot")) {
 			quit = 1;
