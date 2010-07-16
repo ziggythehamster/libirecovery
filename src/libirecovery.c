@@ -60,6 +60,8 @@ irecv_error_t irecv_open(irecv_client_t* pclient) {
 				usb_descriptor.idProduct == kRecoveryMode4 ||
 				usb_descriptor.idProduct == kDfuMode) {
 
+				debug("opening device %04x:%04x...\n", usb_descriptor.idVendor, usb_descriptor.idProduct);
+
 				libusb_open(usb_device, &usb_handle);
 				if (usb_handle == NULL) {
 					libusb_free_device_list(usb_device_list, 1);
@@ -105,7 +107,7 @@ irecv_error_t irecv_set_configuration(irecv_client_t client, int configuration) 
 		return IRECV_E_NO_DEVICE;
 	}
 
-	debug("Setting to configuration %d", configuration);
+	debug("Setting to configuration %d\n", configuration);
 
 	int current = 0;
 	libusb_get_configuration(client->handle, &current);
@@ -128,7 +130,7 @@ irecv_error_t irecv_set_interface(irecv_client_t client, int interface, int alt_
 		return IRECV_E_SUCCESS;
 	}
 
-	debug("Setting to interface %d:%d", interface, alt_interface);
+	debug("Setting to interface %d:%d\n", interface, alt_interface);
 	if (libusb_claim_interface(client->handle, interface) < 0) {
 		return IRECV_E_USB_INTERFACE;
 	}
@@ -330,7 +332,6 @@ irecv_error_t irecv_get_status(irecv_client_t client, unsigned int* status) {
 		return IRECV_E_USB_STATUS;
 	}
 
-	debug("status: %d\n", (unsigned int) buffer[4]);
 	*status = (unsigned int) buffer[4];
 	return IRECV_E_SUCCESS;
 }

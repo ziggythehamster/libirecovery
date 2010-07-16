@@ -276,6 +276,8 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	if (verbose) irecv_set_debug_level(verbose);
+
 	irecv_client_t client = NULL;
 	for (i = 0; i <= 5; i++) {
 		debug("Attempting to connect... \n");
@@ -289,8 +291,6 @@ int main(int argc, char** argv) {
 			return -1;
 		}
 	}
-
-	if (verbose) irecv_set_debug_level(verbose);
 
 	switch (action) {
 	case kResetDevice:
