@@ -250,7 +250,28 @@ void irecv_set_debug_level(int level) {
 	}
 }
 
+static irecv_error_t irecv_send_command_raw(irecv_client_t client, unsigned char* command) {
+	unsigned int length = strlen(command);
+	if (length >= 0x100) {
+		length = 0xFF;
+	}
+
+	if (length > 0) {
+		int ret = libusb_control_transfer(client->handle, 0x40, 0, 0, 0, command, length + 1, 100);
+		if (ret < 0) {
+			if (ret == LIBUSB_ERROR_PIPE)
+				return IRECV_E_PIPE;
+
+			return IRECV_E_UNKNOWN_ERROR;
+		}
+	}
+	
+	return IRECV_E_SUCCESS;
+}
+
 irecv_error_t irecv_send_command(irecv_client_t client, unsigned char* command) {
+	irecv_error_t error = 0;
+
 	if (client == NULL || client->handle == NULL) {
 		return IRECV_E_NO_DEVICE;
 	}
@@ -270,8 +291,11 @@ irecv_error_t irecv_send_command(irecv_client_t client, unsigned char* command) 
 		}
 	}
 
-	if (length > 0) {
-		libusb_control_transfer(client->handle, 0x40, 0, 0, 0, command, length + 1, 100);
+	error = irecv_send_command_raw(client, command);
+	if (error != IRECV_E_SUCCESS) {
+		debug("Failed to send command %s\n", command);
+		if (error != IRECV_E_PIPE)
+			return error;
 	}
 
 	if(client->postcommand_callback != NULL) {
@@ -431,10 +455,11 @@ irecv_error_t irecv_getenv(irecv_client_t client, const char* variable, char** v
 
 	memset(command, '\0', sizeof(command));
 	snprintf(command, sizeof(command)-1, "getenv %s", variable);
-	irecv_error_t error = irecv_send_command(client, command);
-	if(error != IRECV_E_SUCCESS) {
+	irecv_error_t error = irecv_send_command_raw(client, command);
+	if(error == IRECV_E_PIPE)
+		return IRECV_E_SUCCESS;
+	if(error != IRECV_E_SUCCESS)
 		return error;
-	}
 
 	unsigned char* response = (unsigned char*) malloc(256);
 	if (response == NULL) {
@@ -443,9 +468,8 @@ irecv_error_t irecv_getenv(irecv_client_t client, const char* variable, char** v
 
 	memset(response, '\0', 256);
 	int ret = libusb_control_transfer(client->handle, 0xC0, 0, 0, 0, response, 255, 500);
-	if (ret < 0) {
+	if (ret < 0)
 		return IRECV_E_UNKNOWN_ERROR;
-	}
 
 	*value = response;
 	return IRECV_E_SUCCESS;
@@ -563,7 +587,7 @@ irecv_error_t irecv_setenv(irecv_client_t client, const char* variable, const ch
 
 	memset(command, '\0', sizeof(command));
 	snprintf(command, sizeof(command)-1, "setenv %s %s", variable, value);
-	irecv_error_t error = irecv_send_command(client, command);
+	irecv_error_t error = irecv_send_command_raw(client, command);
 	if(error != IRECV_E_SUCCESS) {
 		return error;
 	}
