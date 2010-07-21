@@ -47,6 +47,7 @@ typedef enum {
 	IRECV_E_USB_INTERFACE = -8,
 	IRECV_E_USB_CONFIGURATION = -9,
 	IRECV_E_PIPE = -10,
+	IRECV_E_TIMEOUT = -11,
 	IRECV_E_UNKNOWN_ERROR = -255
 } irecv_error_t;
 
