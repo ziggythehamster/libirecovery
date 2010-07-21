@@ -261,11 +261,12 @@ static irecv_error_t irecv_send_command_raw(irecv_client_t client, unsigned char
 		if ((ret < 0) || (ret != (length + 1))) {
 			if (ret == LIBUSB_ERROR_PIPE)
 				return IRECV_E_PIPE;
-
+			if (ret == LIBUSB_ERROR_TIMEOUT)
+				return IRECV_E_TIMEOUT;
 			return IRECV_E_UNKNOWN_ERROR;
 		}
 	}
-	
+
 	return IRECV_E_SUCCESS;
 }
 
