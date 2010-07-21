@@ -627,6 +627,12 @@ const char* irecv_strerror(irecv_error_t error) {
 	case IRECV_E_USB_CONFIGURATION:
 		return "Unable to set device configuration";
 
+	case IRECV_E_PIPE:
+		return "Broken pipe";
+
+	case IRECV_E_TIMEOUT:
+		return "Timeout talking to device";
+
 	default:
 		return "Unknown error";
 	}
