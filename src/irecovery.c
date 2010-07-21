@@ -104,13 +104,13 @@ void init_shell(irecv_client_t client) {
 	irecv_event_subscribe(client, IRECV_RECEIVED, &received_cb, NULL);
 	irecv_event_subscribe(client, IRECV_PRECOMMAND, &precommand_cb, NULL);
 	irecv_event_subscribe(client, IRECV_POSTCOMMAND, &postcommand_cb, NULL);
-	while (!quit) {
-		error = irecv_receive(client);
-		if (error != IRECV_E_SUCCESS) {
-			debug("%s\n", irecv_strerror(error));
-			break;
-		}
 
+	error = irecv_receive(client);
+	if (error != IRECV_E_SUCCESS) {
+		debug("%s\n", irecv_strerror(error));
+	}
+
+	while (!quit) {
 		char* cmd = readline("> ");
 		if (cmd && *cmd) {
 			error = irecv_send_command(client, cmd);
