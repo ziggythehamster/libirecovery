@@ -48,6 +48,7 @@ void shell_usage() {
 }
 
 void parse_command(irecv_client_t client, unsigned char* command, unsigned int size) {
+	irecv_error_t error = 0;
 	char* cmd = strdup(command);
 	char* action = strtok(cmd, " ");
 	debug("Executing %s\n", action);
@@ -63,7 +64,8 @@ void parse_command(irecv_client_t client, unsigned char* command, unsigned int s
 		char* filename = strtok(NULL, " ");
 		debug("Uploading files %s\n", filename);
 		if (filename != NULL) {
-			irecv_send_file(client, filename);
+			error = irecv_send_file(client, filename);
+			debug("%s\n", irecv_strerror(error));
 		}
 	} else
 
@@ -71,7 +73,8 @@ void parse_command(irecv_client_t client, unsigned char* command, unsigned int s
 		char* filename = strtok(NULL, " ");
 		debug("Sending exploit %s\n", filename);
 		if (filename != NULL) {
-			irecv_send_file(client, filename);
+			error = irecv_send_file(client, filename);
+			debug("%s\n", irecv_strerror(error));
 		}
 		irecv_send_exploit(client);
 	} else
