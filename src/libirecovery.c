@@ -322,7 +322,7 @@ irecv_error_t irecv_send_file(irecv_client_t client, const char* filename) {
 	}
 
 	fseek(file, 0, SEEK_END);
-	int length = ftell(file);
+	long length = ftell(file);
 	fseek(file, 0, SEEK_SET);
 
 	unsigned char* buffer = (unsigned char*) malloc(length);
@@ -331,7 +331,7 @@ irecv_error_t irecv_send_file(irecv_client_t client, const char* filename) {
 		return IRECV_E_OUT_OF_MEMORY;
 	}
 
-	int bytes = fread(buffer, 1, length, file);
+	long bytes = fread(buffer, 1, length, file);
 	fclose(file);
 
 	if (bytes != length) {
@@ -361,35 +361,57 @@ irecv_error_t irecv_get_status(irecv_client_t client, unsigned int* status) {
 	return IRECV_E_SUCCESS;
 }
 
-irecv_error_t irecv_send_buffer(irecv_client_t client, unsigned char* buffer, unsigned int length) {
+irecv_error_t irecv_send_buffer(irecv_client_t client, unsigned char* buffer, unsigned long length) {
 	irecv_error_t error = 0;
+	int recovery_mode = (client->mode != kDfuMode);
+
 	if (client == NULL || client->handle == NULL) {
 		return IRECV_E_NO_DEVICE;
 	}
 
-	int last = length % 0x800;
-	int packets = length / 0x800;
+	int packet_size = recovery_mode ? 0x4000: 0x800;
+	int last = length % packet_size;
+	int packets = length / packet_size;
 	if (last != 0) {
 		packets++;
 	}
 
+	/* initiate transfer */
+	if (recovery_mode) {
+		error = libusb_control_transfer(client->handle, 0x41, 0, 0, 0, NULL, 0, 1000);
+		if (error != IRECV_E_SUCCESS) {
+			return error;
+		}
+	}
+
 	int i = 0;
 	double progress = 0;
-	unsigned int count = 0;
+	unsigned long count = 0;
 	unsigned int status = 0;
+	int bytes = 0;
 	for (i = 0; i < packets; i++) {
-		int size = i + 1 < packets ? 0x800 : last;
-		int bytes = libusb_control_transfer(client->handle, 0x21, 1, 0, 0, &buffer[i * 0x800], size, 1000);
+		int size = (i + 1) < packets ? packet_size : last;
+
+		/* Use bulk transfer for recovery mode and control transfer for DFU and WTF mode */
+		if (recovery_mode) {
+			error = libusb_bulk_transfer(client->handle, 0x04, &buffer[i * packet_size], size, &bytes, 1000);
+		} else {
+			bytes = libusb_control_transfer(client->handle, 0x21, 1, 0, 0, &buffer[i * packet_size], size, 1000);
+		}
+
 		if (bytes != size) {
 			return IRECV_E_USB_UPLOAD;
 		}
 
-		error = irecv_get_status(client, &status);
+		if (!recovery_mode) {
+			error = irecv_get_status(client, &status);
+		}
+
 		if (error != IRECV_E_SUCCESS) {
 			return error;
 		}
 
-		if (status != 5) {
+		if (!recovery_mode && status != 5) {
 			return IRECV_E_USB_UPLOAD;
 		}
 
@@ -406,11 +428,13 @@ irecv_error_t irecv_send_buffer(irecv_client_t client, unsigned char* buffer, un
 		}
 	}
 
-	libusb_control_transfer(client->handle, 0x21, 1, 0, 0, buffer, 0, 1000);
-	for (i = 0; i < 3; i++) {
-		error = irecv_get_status(client, &status);
-		if (error != IRECV_E_SUCCESS) {
-			return error;
+	if (!recovery_mode) {
+		libusb_control_transfer(client->handle, 0x21, 1, 0, 0, buffer, 0, 1000);
+		for (i = 0; i < 3; i++) {
+			error = irecv_get_status(client, &status);
+			if (error != IRECV_E_SUCCESS) {
+				return error;
+			}
 		}
 	}
 

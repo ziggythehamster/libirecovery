@@ -101,7 +101,7 @@ irecv_error_t irecv_event_unsubscribe(irecv_client_t client, irecv_event_type ty
 
 irecv_error_t irecv_send_file(irecv_client_t client, const char* filename);
 irecv_error_t irecv_send_command(irecv_client_t client, unsigned char* command);
-irecv_error_t irecv_send_buffer(irecv_client_t client, unsigned char* buffer, unsigned int length);
+irecv_error_t irecv_send_buffer(irecv_client_t client, unsigned char* buffer, unsigned long length);
 
 irecv_error_t irecv_getenv(irecv_client_t client, const char* variable, char** value);
 irecv_error_t irecv_setenv(irecv_client_t client, const char* variable, const char* value);
