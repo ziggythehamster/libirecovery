@@ -77,6 +77,7 @@ struct irecv_client {
 	int interface;
 	int alt_interface;
 	unsigned short mode;
+	char serial[256];
 	libusb_device_handle* handle;
 	irecv_event_cb_t progress_callback;
 	irecv_event_cb_t received_callback;

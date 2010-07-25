@@ -93,6 +93,9 @@ irecv_error_t irecv_open(irecv_client_t* pclient) {
 					return error;
 				}
 
+				/* cache usb serial */
+				libusb_get_string_descriptor_ascii(client->handle, usb_descriptor.iSerialNumber, client->serial, 255);
+
 				*pclient = client;
 				return IRECV_E_SUCCESS;
 			}
@@ -501,16 +504,11 @@ irecv_error_t irecv_getenv(irecv_client_t client, const char* variable, char** v
 }
 
 irecv_error_t irecv_get_cpid(irecv_client_t client, unsigned int* cpid) {
-	char info[256];
-	memset(info, '\0', 256);
-
 	if (client == NULL || client->handle == NULL) {
 		return IRECV_E_NO_DEVICE;
 	}
 
-	libusb_get_string_descriptor_ascii(client->handle, 3, info, 255);
-
-	unsigned char* cpid_string = strstr(info, "CPID:");
+	unsigned char* cpid_string = strstr(client->serial, "CPID:");
 	if (cpid_string == NULL) {
 		*cpid = 0;
 		return IRECV_E_UNKNOWN_ERROR;
@@ -521,16 +519,11 @@ irecv_error_t irecv_get_cpid(irecv_client_t client, unsigned int* cpid) {
 }
 
 irecv_error_t irecv_get_bdid(irecv_client_t client, unsigned int* bdid) {
-	char info[256];
-	memset(info, '\0', 256);
-
 	if (client == NULL || client->handle == NULL) {
 		return IRECV_E_NO_DEVICE;
 	}
 
-	libusb_get_string_descriptor_ascii(client->handle, 3, info, 255);
-
-	unsigned char* bdid_string = strstr(info, "BDID:");
+	unsigned char* bdid_string = strstr(client->serial, "BDID:");
 	if (bdid_string == NULL) {
 		*bdid = 0;
 		return IRECV_E_UNKNOWN_ERROR;
@@ -541,16 +534,11 @@ irecv_error_t irecv_get_bdid(irecv_client_t client, unsigned int* bdid) {
 }
 
 irecv_error_t irecv_get_ecid(irecv_client_t client, unsigned long long* ecid) {
-	char info[256];
-	memset(info, '\0', 256);
-
 	if (client == NULL || client->handle == NULL) {
 		return IRECV_E_NO_DEVICE;
 	}
 
-	libusb_get_string_descriptor_ascii(client->handle, 3, info, 255);
-
-	unsigned char* ecid_string = strstr(info, "ECID:");
+	unsigned char* ecid_string = strstr(client->serial, "ECID:");
 	if (ecid_string == NULL) {
 		*ecid = 0;
 		return IRECV_E_UNKNOWN_ERROR;
