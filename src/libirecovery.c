@@ -261,6 +261,7 @@ static irecv_error_t irecv_send_command_raw(irecv_client_t client, unsigned char
 
 	if (length > 0) {
 		int ret = libusb_control_transfer(client->handle, 0x40, 0, 0, 0, command, length + 1, 1000);
+		/*
 		if ((ret < 0) || (ret != (length + 1))) {
 			if (ret == LIBUSB_ERROR_PIPE)
 				return IRECV_E_PIPE;
@@ -268,6 +269,7 @@ static irecv_error_t irecv_send_command_raw(irecv_client_t client, unsigned char
 				return IRECV_E_TIMEOUT;
 			return IRECV_E_UNKNOWN_ERROR;
 		}
+		*/
 	}
 
 	return IRECV_E_SUCCESS;
