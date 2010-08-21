@@ -374,7 +374,7 @@ irecv_error_t irecv_send_buffer(irecv_client_t client, unsigned char* buffer, un
 		return IRECV_E_NO_DEVICE;
 	}
 
-	int packet_size = recovery_mode ? 0x4000: 0x800;
+	int packet_size = recovery_mode ? 0x2000: 0x800;
 	int last = length % packet_size;
 	int packets = length / packet_size;
 	if (last != 0) {
@@ -382,12 +382,12 @@ irecv_error_t irecv_send_buffer(irecv_client_t client, unsigned char* buffer, un
 	}
 
 	/* initiate transfer */
-	if (recovery_mode) {
-		error = libusb_control_transfer(client->handle, 0x41, 0, 0, 0, NULL, 0, 1000);
-		if (error != IRECV_E_SUCCESS) {
-			return error;
-		}
-	}
+	//if (recovery_mode) {
+	//	error = libusb_control_transfer(client->handle, 0x41, 0, 0, 0, NULL, 0, 1000);
+	//	if (error != IRECV_E_SUCCESS) {
+	//		return error;
+	//	}
+	//}
 
 	int i = 0;
 	double progress = 0;
@@ -398,11 +398,15 @@ irecv_error_t irecv_send_buffer(irecv_client_t client, unsigned char* buffer, un
 		int size = (i + 1) < packets ? packet_size : last;
 
 		/* Use bulk transfer for recovery mode and control transfer for DFU and WTF mode */
+#ifndef __APPLE__
 		if (recovery_mode) {
 			error = libusb_bulk_transfer(client->handle, 0x04, &buffer[i * packet_size], size, &bytes, 1000);
 		} else {
 			bytes = libusb_control_transfer(client->handle, 0x21, 1, 0, 0, &buffer[i * packet_size], size, 1000);
 		}
+#else
+		bytes = libusb_control_transfer(client->handle, 0x21, 1, 0, 0, &buffer[i * packet_size], size, 1000);
+#endif
 
 		if (bytes != size) {
 			return IRECV_E_USB_UPLOAD;
@@ -662,7 +666,7 @@ int irecv_write_file(const char* filename, const void* data, size_t size) {
 	debug("Writing data to %s\n", filename);
 	file = fopen(filename, "wb");
 	if (file == NULL) {
-		error("read_file: Unable to open file %s\n", filename);
+		//error("read_file: Unable to open file %s\n", filename);
 		return -1;
 	}
 
@@ -670,7 +674,7 @@ int irecv_write_file(const char* filename, const void* data, size_t size) {
 	fclose(file);
 
 	if (bytes != size) {
-		error("ERROR: Unable to write entire file: %s: %d of %d\n", filename, bytes, size);
+		//error("ERROR: Unable to write entire file: %s: %d of %d\n", filename, bytes, size);
 		return -1;
 	}
 
@@ -689,7 +693,7 @@ int irecv_read_file(const char* filename, char** data, uint32_t* size) {
 
 	file = fopen(filename, "rb");
 	if (file == NULL) {
-		error("read_file: File %s not found\n", filename);
+		//error("read_file: File %s not found\n", filename);
 		return -1;
 	}
 
@@ -699,7 +703,7 @@ int irecv_read_file(const char* filename, char** data, uint32_t* size) {
 
 	buffer = (char*) malloc(length);
 	if(buffer == NULL) {
-		error("ERROR: Out of memory\n");
+		//error("ERROR: Out of memory\n");
 		fclose(file);
 		return -1;
 	}
@@ -707,7 +711,7 @@ int irecv_read_file(const char* filename, char** data, uint32_t* size) {
 	fclose(file);
 
 	if(bytes != length) {
-		error("ERROR: Unable to read entire file\n");
+		//error("ERROR: Unable to read entire file\n");
 		free(buffer);
 		return -1;
 	}
