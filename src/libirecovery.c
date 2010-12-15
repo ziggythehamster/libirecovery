@@ -433,7 +433,7 @@ irecv_error_t irecv_send_buffer(irecv_client_t client, unsigned char* buffer, un
 			event.size = count;
 			client->progress_callback(client, &event);
 		} else {
-			debug("Sent: %d bytes - %d of %d\n", bytes, count, length);
+			debug("Sent: %d bytes - %lu of %lu\n", bytes, count, length);
 		}
 	}
 
